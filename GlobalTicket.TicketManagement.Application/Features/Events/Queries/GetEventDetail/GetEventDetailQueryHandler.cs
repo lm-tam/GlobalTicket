@@ -1,0 +1,35 @@
+using AutoMapper;
+using GlobalTicket.TicketManagement.Application.Contracts.Persistence;
+using GlobalTicket.TicketManagement.Domain.Entities;
+using MediatR;
+
+namespace GlobalTicket.TicketManagement.Application.Features.Events.Queries.GetEventDetail;
+
+public class GetEventDetailQueryHandler : IRequestHandler<GetEventDetailQuery, EventDetailVm>
+{
+    private readonly IAsyncRepository<Event> _eventRepository;
+    
+    private readonly IAsyncRepository<Category> _categoryRepository;
+
+    private readonly IMapper _mapper;
+
+    public GetEventDetailQueryHandler(IAsyncRepository<Event> eventRepository, IAsyncRepository<Category> categoryRepository, IMapper mapper)
+    {
+        _eventRepository = eventRepository;
+        _categoryRepository = categoryRepository;
+        _mapper = mapper;
+    }
+
+    public async Task<EventDetailVm> Handle(GetEventDetailQuery request, CancellationToken cancellationToken)
+    {
+        var @event = await this._eventRepository.GetByIdAsync(request.Id, cancellationToken);
+
+        var eventDetailDto = _mapper.Map<EventDetailVm>(@event);
+
+        var category = await _categoryRepository.GetByIdAsync(@event.CategoryId, cancellationToken);
+
+        eventDetailDto.Category = _mapper.Map<CategoryDto>(category);
+
+        return eventDetailDto;
+    }
+}
